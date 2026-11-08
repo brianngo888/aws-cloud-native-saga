@@ -1,0 +1,2 @@
+# Runtime compatibility and verification
+The API is designed for Java 25 on EKS; Lambda sample targets the AWS managed Java 21 runtime to avoid assuming a managed Java 25 Lambda runtime is available. AWS runtime availability changes; verify against the current AWS documentation before deployment. Check Gradle and Spring Boot versions against JDK 25 and run actual builds. No compilation or AWS deployment is claimed in this package.

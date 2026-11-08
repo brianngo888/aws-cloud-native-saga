@@ -1,0 +1,5 @@
+region = "us-east-2"
+environment = "dev"
+kubernetes_version = "1.33" # replace with currently supported version
+admin_cidrs = ["203.0.113.10/32"] # replace with YOUR public IP
+lambda_zip_path = "/absolute/path/to/lambdas/build/distributions/lambdas.zip"

@@ -1,0 +1,10 @@
+image:
+  repository: REPLACE_WITH_ECR_REPOSITORY
+  digest: REPLACE_WITH_SHA256_DIGEST
+replicaCount: 2
+serviceAccountName: order-service
+r2dbcUrl: r2dbc:postgresql://postgres.example.internal:5432/orders
+sagaArn: ""
+resources:
+  requests: {cpu: 250m, memory: 512Mi}
+  limits: {cpu: "1", memory: 1Gi}

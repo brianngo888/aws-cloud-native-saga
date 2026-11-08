@@ -1,0 +1,6 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: {POSTGRES_DB: orders, POSTGRES_USER: orders, POSTGRES_PASSWORD: orders}
+    ports: ["5432:5432"]
+    volumes: ["./services/order-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro"]
