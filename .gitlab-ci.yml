@@ -4,7 +4,9 @@ variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 validate:
   stage: validate
-  image: hashicorp/terraform:1.9.8
+  image:
+    name: hashicorp/terraform:1.9.8
+    entrypoint: [""]
   script:
     - cd infrastructure/terraform
     - terraform fmt -check -recursive
@@ -12,7 +14,7 @@ validate:
     - terraform validate
 unit_test:
   stage: test
-  image: gradle:8.14-jdk25
+  image: gradle:9.2.1-jdk25
   script: ["cd services/order-service && gradle --no-daemon test"]
 container_build:
   stage: build
@@ -25,7 +27,9 @@ container_build:
   artifacts: {paths: [image.tar], expire_in: 1 day}
 container_scan:
   stage: scan
-  image: aquasec/trivy:0.57.1
+  image:
+    name: aquasec/trivy:0.57.1
+    entrypoint: [""]
   script:
     - trivy image --input image.tar --severity HIGH,CRITICAL --exit-code 1 --ignore-unfixed
   needs: [{job: container_build, artifacts: true}]

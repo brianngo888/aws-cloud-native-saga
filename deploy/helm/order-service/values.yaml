@@ -4,6 +4,7 @@ image:
 replicaCount: 2
 serviceAccountName: order-service
 r2dbcUrl: r2dbc:postgresql://postgres.example.internal:5432/orders
+awsRegion: us-east-2
 sagaArn: ""
 resources:
   requests: {cpu: 250m, memory: 512Mi}

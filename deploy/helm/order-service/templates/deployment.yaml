@@ -12,12 +12,18 @@ spec:
     spec:
       serviceAccountName: {{ .Values.serviceAccountName }}
       securityContext: {runAsNonRoot: true, seccompProfile: {type: RuntimeDefault}}
+      volumes:
+        - name: tmp
+          emptyDir: {}
       containers:
         - name: order
           image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
           ports: [{containerPort: 8080}]
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
           env:
             - {name: R2DBC_URL, value: "{{ .Values.r2dbcUrl }}"}
+            - {name: AWS_REGION, value: {{ .Values.awsRegion | quote }}}
             - {name: SAGA_ARN, value: "{{ .Values.sagaArn }}"}
             - name: DB_USER
               valueFrom: {secretKeyRef: {name: order-db, key: username}}

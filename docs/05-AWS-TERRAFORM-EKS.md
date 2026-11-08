@@ -1,7 +1,7 @@
 # Real AWS deployment walkthrough
 
 Prerequisites: AWS account with approved IAM permissions, Terraform, AWS CLI, kubectl, Helm,
-Docker, Java 25, Gradle 8.14+, and cost budget/alerts.
+Docker, JDK 25 for the API, JDK 21 for the Lambda build, Gradle 9.2.1, and cost budget/alerts.
 
 1. Set AWS profile and verify: `aws sts get-caller-identity`.
 2. Select a supported EKS Kubernetes version in your target region.
@@ -15,7 +15,7 @@ Docker, Java 25, Gradle 8.14+, and cost budget/alerts.
 10. Build and push the Order image to ECR, capture the pushed sha256 digest.
 11. Provision RDS PostgreSQL in private subnets and migrate `schema.sql` (not yet automated here).
 12. Configure EKS Pod Identity for Step Functions access, and a DB secret provider.
-13. `helm upgrade --install order deploy/helm/order-service -f values.yaml --set image.repository=... --set image.digest=sha256:...`.
+13. Set `awsRegion` and `sagaArn` to match the Step Functions deployment, then run `helm upgrade --install order deploy/helm/order-service -f values.yaml --set image.repository=... --set image.digest=sha256:...`.
 14. `kubectl rollout status deployment/order` and port-forward the service to test `/actuator/health`.
 15. Check Step Functions execution and CloudWatch logs.
 

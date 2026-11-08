@@ -1,14 +1,203 @@
 {
- "Comment":"Educational saga with durable compensation; extend reconciliation before real payments",
- "StartAt":"Reserve",
- "States":{
-  "Reserve":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"reserve","orderId.$":"$.orderId","productId.$":"$.productId","quantity.$":"$.quantity"}},"ResultPath":"$.reserveResult","Retry":[{"ErrorEquals":["Lambda.ServiceException","Lambda.AWSLambdaException","Lambda.SdkClientException"],"IntervalSeconds":2,"MaxAttempts":3,"BackoffRate":2}],"Catch":[{"ErrorEquals":["States.ALL"],"Next":"Failed"}],"Next":"Authorize"},
-  "Authorize":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"authorize","orderId.$":"$.orderId"}},"ResultPath":"$.authResult","Catch":[{"ErrorEquals":["States.ALL"],"Next":"Release"}],"Next":"Ship"},
-  "Ship":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"ship","orderId.$":"$.orderId","simulateFailure.$":"$.simulateFailure"}},"ResultPath":"$.shipResult","Catch":[{"ErrorEquals":["States.ALL"],"Next":"Void"}],"Next":"Capture"},
-  "Capture":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"capture","orderId.$":"$.orderId"}},"ResultPath":"$.captureResult","Catch":[{"ErrorEquals":["States.ALL"],"Next":"CancelShipment"}],"Next":"Success"},
-  "CancelShipment":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"cancelShipment","orderId.$":"$.orderId"}},"ResultPath":"$.cancelResult","Catch":[{"ErrorEquals":["States.ALL"],"Next":"NeedsAttention"}],"Next":"Void"},
-  "Void":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"void","orderId.$":"$.orderId"}},"ResultPath":"$.voidResult","Catch":[{"ErrorEquals":["States.ALL"],"Next":"NeedsAttention"}],"Next":"Release"},
-  "Release":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","Parameters":{"FunctionName":"${saga_lambda_arn}","Payload":{"action":"release","orderId.$":"$.orderId"}},"ResultPath":"$.releaseResult","Catch":[{"ErrorEquals":["States.ALL"],"Next":"NeedsAttention"}],"Next":"Failed"},
-  "Success":{"Type":"Succeed"},"Failed":{"Type":"Fail","Error":"SagaCancelled"},"NeedsAttention":{"Type":"Fail","Error":"ManualReconciliationRequired"}
- }
+  "Comment": "Simulated order saga with compensation and an explicit reconciliation outcome.",
+  "StartAt": "CheckSimulationFlag",
+  "States": {
+    "CheckSimulationFlag": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.simulateFailure",
+          "IsPresent": true,
+          "Next": "Reserve"
+        }
+      ],
+      "Default": "DefaultSimulationFlag"
+    },
+    "DefaultSimulationFlag": {
+      "Type": "Pass",
+      "Result": false,
+      "ResultPath": "$.simulateFailure",
+      "Next": "Reserve"
+    },
+    "Reserve": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "reserve",
+          "orderId.$": "$.orderId",
+          "productId.$": "$.productId",
+          "quantity.$": "$.quantity"
+        }
+      },
+      "ResultPath": "$.reserveResult",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Failed",
+          "ResultPath": "$.failure"
+        }
+      ],
+      "Next": "Authorize"
+    },
+    "Authorize": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "authorize",
+          "orderId.$": "$.orderId"
+        }
+      },
+      "ResultPath": "$.authResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Release",
+          "ResultPath": "$.failure"
+        }
+      ],
+      "Next": "Ship"
+    },
+    "Ship": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "ship",
+          "orderId.$": "$.orderId",
+          "simulateFailure.$": "$.simulateFailure"
+        }
+      },
+      "ResultPath": "$.shipResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "Void",
+          "ResultPath": "$.failure"
+        }
+      ],
+      "Next": "Capture"
+    },
+    "Capture": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "capture",
+          "orderId.$": "$.orderId"
+        }
+      },
+      "ResultPath": "$.captureResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "CancelShipment",
+          "ResultPath": "$.failure"
+        }
+      ],
+      "Next": "Success"
+    },
+    "CancelShipment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "cancelShipment",
+          "orderId.$": "$.orderId"
+        }
+      },
+      "ResultPath": "$.cancelResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NeedsAttention",
+          "ResultPath": "$.compensationFailure"
+        }
+      ],
+      "Next": "Void"
+    },
+    "Void": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "void",
+          "orderId.$": "$.orderId"
+        }
+      },
+      "ResultPath": "$.voidResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NeedsAttention",
+          "ResultPath": "$.compensationFailure"
+        }
+      ],
+      "Next": "Release"
+    },
+    "Release": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${saga_lambda_arn}",
+        "Payload": {
+          "action": "release",
+          "orderId.$": "$.orderId"
+        }
+      },
+      "ResultPath": "$.releaseResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "Next": "NeedsAttention",
+          "ResultPath": "$.compensationFailure"
+        }
+      ],
+      "Next": "Failed"
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Failed": {
+      "Type": "Fail",
+      "Error": "SagaCancelled"
+    },
+    "NeedsAttention": {
+      "Type": "Fail",
+      "Error": "ManualReconciliationRequired"
+    }
+  }
 }

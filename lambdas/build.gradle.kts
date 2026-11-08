@@ -10,8 +10,10 @@ dependencies {
 }
 tasks.register<Zip>("lambdaZip") {
  dependsOn("jar")
- from(tasks.jar)
- into("lib") { from(configurations.runtimeClasspath) }
+ into("lib") {
+  from(tasks.jar)
+  from(configurations.runtimeClasspath)
+ }
  archiveFileName.set("lambdas.zip")
  destinationDirectory.set(layout.buildDirectory.dir("distributions"))
 }

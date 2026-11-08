@@ -7,7 +7,7 @@ import io.r2dbc.spi.ConnectionFactory;
 import software.amazon.awssdk.services.sfn.SfnAsyncClient;
 @Configuration
 public class AwsConfig {
- @Bean SfnAsyncClient sfn() {return SfnAsyncClient.create();}
+ @Bean @Lazy SfnAsyncClient sfn() {return SfnAsyncClient.create();}
  @Bean ReactiveTransactionManager transactionManager(ConnectionFactory factory) {return new R2dbcTransactionManager(factory);}
  @Bean TransactionalOperator tx(ReactiveTransactionManager manager) {return TransactionalOperator.create(manager);}
 }
